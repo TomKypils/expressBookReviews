@@ -29,6 +29,30 @@ const authenticatedUser = (username,password)=>{ //returns boolean
   }
 }
 
+function changeCommentByUsername(isbn,username,newComment) {
+  // Iterate over the reviews array
+  for (let i = 0; i < books[isbn].reviews.length; i++) {
+    if (books[isbn].reviews[i].username === username) {
+      // Change the comment of the matching username
+      books[isbn].reviews[i].comment = newComment;
+      break; // Exit the loop once the comment is changed
+    }
+  }
+}
+
+function deleteReviewByUsername(isbn,username) {
+  // Find the index of the review with the matching username
+  const index = books[isbn].reviews.findIndex(review => review.username === username);
+
+  // If a matching review is found, delete it from the array
+  if (index !== -1) {
+    books[isbn].reviews.splice(index, 1);
+    return true;
+  } else {
+    return false;
+   }
+}
+
 //only registered users can login
 regd_users.post("/login", (req,res) => {
   //Write your code here
@@ -58,7 +82,7 @@ regd_users.post("/login", (req,res) => {
         //Write your code here
         const isbn = req.params.isbn;
         const newReview = req.query.review; // Retrieve the review from query parameter
-        const user = req.user;
+        const user = req.session.authorization.username;
         // Check if the book exists in the books database
         const bookExist = isbn in books;
         if (!bookExist) {
@@ -71,8 +95,7 @@ regd_users.post("/login", (req,res) => {
 
         // Add the review to the book
         if(userReview.length > 0) {
-            userReview[0].comment = newReview;
-            books[isbn].reviews.push(userReview);
+          changeCommentByUsername(isbn,user,newReview);
         }
 
         else {
@@ -81,6 +104,23 @@ regd_users.post("/login", (req,res) => {
         }
 
         return res.status(200).json({ message: "Book review added successfully" });
+      });
+
+      regd_users.delete("/auth/review/:isbn", (req, res) => {
+        const isbn = req.params.isbn;
+        const user = req.session.authorization.username;
+
+        const bookExist = isbn in books;
+        if (!bookExist) {
+          return res.status(404).json({ message: "Book not found" });
+        }
+
+        let isReviewByUser = deleteReviewByUsername(isbn,user);
+        if(isReviewByUser) {
+          return res.status(200).json({ message: "Book review deleted successfully" });
+        } else {
+           return res.status(208).json({message: "User review not found. Cannot delete"})
+        }
       });
 
 module.exports.authenticated = regd_users;
