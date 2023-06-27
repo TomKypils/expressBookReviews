@@ -53,11 +53,35 @@ regd_users.post("/login", (req,res) => {
   }
 });
 
-// Add a book review
-regd_users.put("/auth/review/:isbn", (req, res) => {
-  //Write your code here
-  return res.status(300).json({message: "Yet to be implemented"});
-});
+     // Add a book review
+     regd_users.put("/auth/review/:isbn", (req, res) => {
+        //Write your code here
+        const isbn = req.params.isbn;
+        const newReview = req.query.review; // Retrieve the review from query parameter
+        const user = req.user;
+        // Check if the book exists in the books database
+        const bookExist = isbn in books;
+        if (!bookExist) {
+          return res.status(404).json({ message: "Book not found" });
+        }
+
+        let userReview = books[isbn].reviews.filter((review)=>{
+            return (review.username === user)
+          });
+
+        // Add the review to the book
+        if(userReview.length > 0) {
+            userReview[0].comment = newReview;
+            books[isbn].reviews.push(userReview);
+        }
+
+        else {
+            let firstReview = {username: user,comment: newReview}
+            books[isbn].reviews.push(firstReview);
+        }
+
+        return res.status(200).json({ message: "Book review added successfully" });
+      });
 
 module.exports.authenticated = regd_users;
 module.exports.isValid = isValid;
