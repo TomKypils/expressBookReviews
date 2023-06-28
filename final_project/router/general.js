@@ -5,17 +5,31 @@ let isValid = require("./auth_users.js").isValid;
 let users = require("./auth_users.js").users;
 const public_users = express.Router();
 
-
-const booksByAuthor = (author)=>{ 
-      let authorBooks = {};
-
-      for(key in books) {
-         if(books[key].author === author) {
-            authorBooks.push(books[key]);
-          }
-         }
-    return authorBooks; 
+function getBooksByAuthor(authorName) {
+  var authorBooks = [];
+  for (var bookId in books) {
+    if (books.hasOwnProperty(bookId)) {
+      var bookInfo = books[bookId];
+      if (bookInfo.author === authorName) {
+        authorBooks.push(bookInfo);
+      }
+    }
   }
+  return authorBooks;
+}
+
+function getBooksByTitle(bookTitle) {
+  var authorBooks = [];
+  for (var bookId in books) {
+    if (books.hasOwnProperty(bookId)) {
+      var bookInfo = books[bookId];
+      if (bookInfo.title === bookTitle) {
+        authorBooks.push(bookInfo);
+      }
+    }
+  }
+  return authorBooks;
+}
 
 
 public_users.post("/register", (req,res) => {
@@ -35,61 +49,72 @@ public_users.post("/register", (req,res) => {
 });
 
 
-const getBooks = async () => {
-  try {
-    // Make the GET request using Axios
-    const response = await axios.get('http://localhost:5000');
-
-    // Process the response data
-    const data = response.data;
-    console.log(data);
-  } catch (error) {
-    console.error('Error:', error.message);
-  }
-}
-
-const getBook = async () => {
-  try {
-    // Make the GET request using Axios
-    const response = await axios.get('http://localhost:5000/isbn/3');
-
-    // Process the response data
-    const data = response.data;
-    console.log(data);
-  } catch (error) {
-    console.error('Error:', error.message);
-  }
-}
-
 // Get the book list available in the shop
 public_users.get('/', function (req, res) {
-   
-    // Send the book list as a response
-    return res.status(200).send(JSON.stringify(books, null, 4));
-   });
+
+  let myPromise = new Promise((resolve,reject) => {
+      // Send the book list as a response
+      res.status(200).send(JSON.stringify(books, null, 4));
+      resolve("Get Book list resolved")
+    })
+
+    myPromise.then((successMessage) => {
+      console.log("From Callback " + successMessage)
+    })
+
+  });
 
 // Get book details based on ISBN
 public_users.get('/isbn/:isbn',function (req, res) {
   //Write your code here
-  const isbn = req.params.isbn
+  const isbn = req.params.isbn;
   let book = books[isbn];
 
-  return res.status(200).send(book);
+  let myPromise = new Promise((resolve,reject) => {
+    // Send the book details as a response
+    res.status(200).send(book);
+    resolve("Get Book details resolved")
+  })
+
+  myPromise.then((successMessage) => {
+    console.log("From Callback " + successMessage)
+  })
+
  });
   
 // Get book details based on author
 public_users.get('/author/:author',function (req, res) {
   //Write your code here
-  const author = req.params.author
-  let author_books = booksByAuthor(author);
+  const author = req.params.author;
+  let author_books = getBooksByAuthor(author);
 
-  return res.status(200).send(author_books);
+  let myPromise = new Promise((resolve,reject) => {
+    // Send the books by author as a response
+    res.status(200).send(author_books);
+    resolve("Get Books by author resolved")
+  })
+
+  myPromise.then((successMessage) => {
+    console.log("From Callback " + successMessage)
+  })
+
 });
 
 // Get all books based on title
 public_users.get('/title/:title',function (req, res) {
   //Write your code here
-  return res.status(300).json({message: "Yet to be implemented"});
+  const title = req.params.title;
+  let books_title = getBooksByTitle(title);
+
+  let myPromise = new Promise((resolve,reject) => {
+    // Send the books by title as a response
+    res.status(200).send(books_title);
+    resolve("Get Books by title resolved")
+  })
+
+  myPromise.then((successMessage) => {
+    console.log("From Callback " + successMessage)
+  })
 });
 
 //  Get book review
@@ -99,5 +124,3 @@ public_users.get('/review/:isbn',function (req, res) {
 });
 
 module.exports.general = public_users;
-module.exports.getBooks = getBooks;
-module.exports.getBook = getBook;
